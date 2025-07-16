@@ -1,12 +1,18 @@
 import { ethers } from 'ethers';
 
-const CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000'; // Deploy address will be set here
+// TODO: Update this address after deploying the contract
+const CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000'; // Will be updated after deployment
+
 const CONTRACT_ABI = [
   "function payForAuditETH(string memory contractAddress) external payable",
   "function payForAuditUSDT(string memory contractAddress) external",
   "function hasPaidForAudit(address user, string memory contractAddress) external view returns (bool)",
   "function ethFee() external view returns (uint256)",
   "function usdtFee() external view returns (uint256)",
+  "function getStats() external view returns (uint256, uint256, uint256, uint256, uint256)",
+  "function getUserStats(address user) external view returns (uint256)",
+  "function owner() external view returns (address)",
+  "function paused() external view returns (bool)",
   "event AuditPaid(address indexed user, string contractAddress, uint256 amount, bool isEth)"
 ];
 
