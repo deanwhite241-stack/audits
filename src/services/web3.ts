@@ -76,29 +76,10 @@ export class Web3Service {
     return await this.signer.getAddress();
   }
 
-  async disconnect() {
-    // Clear the connection state
+  disconnect() {
     this.provider = null;
     this.signer = null;
     this.contract = null;
-    
-    // Clear any cached wallet data
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.removeItem('walletConnected');
-    }
-    
-    // Trigger wallet disconnect event if available
-    if (typeof window !== 'undefined' && window.ethereum) {
-      try {
-        // Some wallets support programmatic disconnect
-        if (window.ethereum.disconnect) {
-          await window.ethereum.disconnect();
-        }
-      } catch (error) {
-        // Ignore errors - not all wallets support this
-        console.log('Wallet disconnect not supported');
-      }
-    }
   }
 }
 

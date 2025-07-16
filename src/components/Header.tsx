@@ -5,10 +5,9 @@ import { web3Service } from '../services/web3';
 interface HeaderProps {
   onNavigate: (page: string) => void;
   currentPage: string;
-  onWalletStateChange?: (connected: boolean) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage, onWalletStateChange }) => {
+export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [userAddress, setUserAddress] = useState<string>('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -23,11 +22,8 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage, onWalle
         const address = await web3Service.getAddress();
         setUserAddress(address);
         setIsConnected(true);
-        onWalletStateChange?.(true);
       } catch (error) {
         console.error('Failed to get address:', error);
-        setIsConnected(false);
-        onWalletStateChange?.(false);
       }
     }
   };
@@ -37,10 +33,8 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage, onWalle
       const address = await web3Service.connect();
       setUserAddress(address);
       setIsConnected(true);
-      onWalletStateChange?.(true);
     } catch (error) {
       console.error('Failed to connect wallet:', error);
-      onWalletStateChange?.(false);
     }
   };
 
@@ -49,15 +43,8 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage, onWalle
       await web3Service.disconnect();
       setIsConnected(false);
       setUserAddress('');
-      
-      // Force a page refresh to clear all wallet state
-      window.location.reload();
     } catch (error) {
       console.error('Failed to disconnect wallet:', error);
-      // Even if disconnect fails, clear the UI state
-      setIsConnected(false);
-      setUserAddress('');
-      onWalletStateChange?.(false);
     }
   };
 
