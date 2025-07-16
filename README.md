@@ -113,6 +113,14 @@ The payment contract is located in `src/contracts/AuditPay.sol`. To deploy:
 3. Deploy the contract
 4. Update the contract address in the frontend
 
+### Testing vs Production Contracts
+
+- **AuditPay.sol** - Main payment contract (deployed to production)
+- **MockERC20.sol** - Test-only contract (NOT deployed to production)
+
+The MockERC20 is only used for local testing to simulate USDT behavior.
+In production, AuditPay connects to real USDT contracts on each network.
+
 ## Architecture
 
 ### Frontend Structure

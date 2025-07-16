@@ -5,7 +5,9 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /**
  * @title MockERC20
- * @dev Mock ERC20 token for testing purposes
+ * @dev Mock ERC20 token for testing purposes ONLY
+ * @notice This contract is NOT deployed to production networks
+ * @notice Used only for local testing and automated test suites
  */
 contract MockERC20 is ERC20 {
     uint8 private _decimals;
@@ -22,6 +24,7 @@ contract MockERC20 is ERC20 {
         return _decimals;
     }
 
+    // TEST FUNCTIONS ONLY - NOT AVAILABLE IN REAL USDT
     function mint(address to, uint256 amount) public {
         _mint(to, amount);
     }
