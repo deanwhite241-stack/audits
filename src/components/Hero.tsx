@@ -49,7 +49,7 @@ export const Hero: React.FC = () => {
               <div className="text-gray-600">Accuracy Rate</div>
             </div>
             <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100">
-              <div className="text-3xl font-bold text-green-600 mb-2">< 30s</div>
+              <div className="text-3xl font-bold text-green-600 mb-2">&lt; 30s</div>
               <div className="text-gray-600">Average Scan Time</div>
             </div>
           </div>
