@@ -64,21 +64,44 @@ cd contractguard
 npm install
 ```
 
-3. Start the development server
+3. Set up environment variables
+```bash
+cp .env.example .env
+# Edit .env and add your API keys:
+# OPENAI_API_KEY=your_openai_api_key
+# ETHERSCAN_API_KEY=your_etherscan_api_key
+```
+
+4. Start the backend server
+```bash
+node src/backend/server.js
+```
+
+5. Start the frontend development server
 ```bash
 npm run dev
 ```
 
-4. Open your browser to `http://localhost:5173`
+6. Open your browser to `http://localhost:5173`
 
 ### Environment Variables
 
-Create a `.env` file in the root directory:
+The application requires the following environment variables:
 
 ```env
-VITE_ETHERSCAN_API_KEY=your_etherscan_api_key
-VITE_OPENAI_API_KEY=your_openai_api_key
-VITE_CONTRACT_ADDRESS=0x...
+# Required for AI analysis
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Required for contract data fetching
+ETHERSCAN_API_KEY=your_etherscan_api_key_here
+
+# Optional - Database URL if using persistent storage
+DATABASE_URL=your_database_url_here
+
+# Server configuration
+PORT=3001
+NODE_ENV=production
+ALLOWED_ORIGINS=https://your-frontend-domain.com
 ```
 
 ## Smart Contract Deployment
