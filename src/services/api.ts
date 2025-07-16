@@ -1,6 +1,6 @@
 import { AuditResult, UserAudit, Project, ProjectSubmission } from '../types';
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
+const API_BASE_URL = import.meta.env.PROD 
   ? 'https://your-backend-api.com/api' 
   : 'http://localhost:3001/api';
 
