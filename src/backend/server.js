@@ -3,6 +3,9 @@ const cors = require('cors');
 const OpenAI = require('openai');
 const axios = require('axios');
 const rateLimit = require('express-rate-limit');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
@@ -12,16 +15,43 @@ const PORT = process.env.PORT || 3001;
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
+  message: { error: 'Too many requests from this IP, please try again later.' }
+});
+
+// File upload configuration
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = 'uploads/';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
 });
 
 // Middleware
 app.use(limiter);
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'],
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173', 'https://papaya-seahorse-ebcc5a.netlify.app'],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
+app.use('/uploads', express.static('uploads'));
 
 // Initialize OpenAI
 const openai = new OpenAI({
@@ -31,6 +61,11 @@ const openai = new OpenAI({
 // Etherscan configuration
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const ETHERSCAN_BASE_URL = 'https://api.etherscan.io/api';
+
+// In-memory storage (replace with database in production)
+let projects = [];
+let userAudits = {};
+let auditHistory = {};
 
 // Utility functions
 const fetchContractSource = async (address) => {
@@ -151,43 +186,11 @@ const analyzeWithAI = async (code, contractAddress, isSourceCode = true) => {
 
     const analysisText = response.choices[0].message.content;
     
-    // Parse JSON response
     try {
       return JSON.parse(analysisText);
     } catch (parseError) {
       console.error('JSON parse error:', parseError);
-      // Fallback response if JSON parsing fails
-      return {
-        riskScore: 50,
-        summary: "Analysis completed but response format error occurred",
-        contractInfo: {
-          isVerified: isSourceCode,
-          hasOwnable: false,
-          hasMintable: false,
-          hasUpgradeable: false,
-          compiler: "unknown"
-        },
-        issueCount: {
-          critical: 0,
-          medium: 1,
-          low: 1,
-          informational: 1
-        },
-        freeReport: {
-          summary: "Basic analysis completed. Please try again for detailed results.",
-          basicVulnerabilities: ["Analysis format error - please retry"],
-          riskLevel: "MEDIUM"
-        },
-        premiumReport: {
-          criticalVulnerabilities: [],
-          mediumVulnerabilities: ["Response parsing error occurred"],
-          spywareRisks: [],
-          honeypotRisks: [],
-          backdoorRisks: [],
-          recommendations: ["Retry analysis for complete results"],
-          detailedAnalysis: "Analysis completed but formatting error occurred. Please try again."
-        }
-      };
+      throw new Error('AI analysis returned invalid format');
     }
   } catch (error) {
     console.error('OpenAI API error:', error);
@@ -234,7 +237,6 @@ app.post('/api/audit', validateContractAddress, async (req, res) => {
       isVerified = true;
       console.log('Using verified source code for analysis');
     } else {
-      // Fetch bytecode if source is not available
       try {
         const bytecode = await fetchContractBytecode(contractAddress);
         analysisInput = bytecode;
@@ -266,8 +268,14 @@ app.post('/api/audit', validateContractAddress, async (req, res) => {
       },
       freeReport: aiAnalysis.freeReport,
       premiumReport: aiAnalysis.premiumReport,
-      isPaid: false // This would be determined by payment verification
+      isPaid: false
     };
+
+    // Store audit in history
+    if (!auditHistory[contractAddress]) {
+      auditHistory[contractAddress] = [];
+    }
+    auditHistory[contractAddress].push(result);
 
     console.log(`Analysis completed for ${contractAddress}`);
     res.json(result);
@@ -281,13 +289,145 @@ app.post('/api/audit', validateContractAddress, async (req, res) => {
   }
 });
 
+// User audit history
+app.get('/api/user/:address/audits', (req, res) => {
+  const { address } = req.params;
+  const audits = userAudits[address] || [];
+  res.json(audits);
+});
+
+app.get('/api/user/:address/history', (req, res) => {
+  const { address } = req.params;
+  const history = [];
+  
+  // Collect all audits for this user
+  Object.values(auditHistory).flat().forEach(audit => {
+    history.push(audit);
+  });
+  
+  res.json(history);
+});
+
+// Projects management
+app.get('/api/projects', (req, res) => {
+  const { search, chain, type, certificateOnly } = req.query;
+  let filteredProjects = projects.filter(p => p.status === 'approved');
+  
+  if (search) {
+    const searchLower = search.toLowerCase();
+    filteredProjects = filteredProjects.filter(p => 
+      p.name.toLowerCase().includes(searchLower) ||
+      p.description.toLowerCase().includes(searchLower) ||
+      p.contractAddress.toLowerCase().includes(searchLower)
+    );
+  }
+  
+  if (chain) {
+    filteredProjects = filteredProjects.filter(p => p.chain === chain);
+  }
+  
+  if (type) {
+    filteredProjects = filteredProjects.filter(p => p.type === type);
+  }
+  
+  if (certificateOnly === 'true') {
+    filteredProjects = filteredProjects.filter(p => p.certificate === 'Gold ESR');
+  }
+  
+  res.json(filteredProjects);
+});
+
+app.post('/api/projects/submit', upload.single('logo'), (req, res) => {
+  try {
+    const { name, description, contractAddress, chain, type, website, twitter, telegram } = req.body;
+    
+    if (!name || !description || !contractAddress || !chain || !type) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    const project = {
+      id: Date.now().toString(),
+      name,
+      description,
+      logo: req.file ? `/uploads/${req.file.filename}` : '',
+      contractAddress,
+      chain,
+      type,
+      website: website || '',
+      twitter: twitter || '',
+      telegram: telegram || '',
+      auditUrl: `/audit/${contractAddress}`,
+      certificate: 'None',
+      status: 'pending',
+      submittedAt: new Date().toISOString()
+    };
+    
+    projects.push(project);
+    
+    res.json({ success: true, message: 'Project submitted successfully for review' });
+  } catch (error) {
+    console.error('Project submission error:', error);
+    res.status(500).json({ error: 'Submission failed' });
+  }
+});
+
+// Admin routes
+app.get('/api/admin/projects/pending', (req, res) => {
+  const pendingProjects = projects.filter(p => p.status === 'pending');
+  res.json(pendingProjects);
+});
+
+app.post('/api/admin/projects/:id/approve', (req, res) => {
+  const { id } = req.params;
+  const { certificate } = req.body;
+  
+  const project = projects.find(p => p.id === id);
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found' });
+  }
+  
+  project.status = 'approved';
+  project.certificate = certificate;
+  project.approvedAt = new Date().toISOString();
+  project.approvedBy = 'admin';
+  
+  res.json({ success: true });
+});
+
+app.post('/api/admin/projects/:id/reject', (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  
+  const project = projects.find(p => p.id === id);
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found' });
+  }
+  
+  project.status = 'rejected';
+  project.rejectionReason = reason;
+  project.rejectedAt = new Date().toISOString();
+  
+  res.json({ success: true });
+});
+
+// Payment verification
+app.post('/api/payment/verify', (req, res) => {
+  const { userAddress, contractAddress } = req.body;
+  
+  // This would integrate with your smart contract to verify payment
+  // For now, returning false - implement with actual Web3 integration
+  res.json({ hasPaid: false });
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
     openai: !!process.env.OPENAI_API_KEY,
-    etherscan: !!process.env.ETHERSCAN_API_KEY
+    etherscan: !!process.env.ETHERSCAN_API_KEY,
+    projects: projects.length,
+    audits: Object.keys(auditHistory).length
   });
 });
 

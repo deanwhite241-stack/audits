@@ -1,5 +1,4 @@
-import { AuditResult } from '../types';
-import { Project, ProjectSubmission } from '../types';
+import { AuditResult, UserAudit, Project, ProjectSubmission } from '../types';
 
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
   ? 'https://your-backend-api.com/api' 
@@ -29,9 +28,7 @@ export class ApiService {
     }
   }
 
-  async getUserAudits(userAddress: string) {
-    // This would connect to your database to fetch user's audit history
-    // For now, returning empty array - implement based on your database
+  async getUserAudits(userAddress: string): Promise<UserAudit[]> {
     try {
       const response = await fetch(`${API_BASE_URL}/user/${userAddress}/audits`, {
         headers: {
@@ -46,7 +43,7 @@ export class ApiService {
       return await response.json();
     } catch (error) {
       console.error('Failed to fetch user audits:', error);
-      return []; // Return empty array as fallback
+      throw error;
     }
   }
 
@@ -76,8 +73,7 @@ export class ApiService {
       return await response.json();
     } catch (error) {
       console.error('Failed to fetch projects:', error);
-      // Return mock data as fallback
-      return this.getMockProjects(filters);
+      throw error;
     }
   }
 
@@ -116,7 +112,7 @@ export class ApiService {
       const response = await fetch(`${API_BASE_URL}/admin/projects/pending`, {
         headers: {
           'Content-Type': 'application/json',
-          // Add authentication headers here
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
         },
       });
 
@@ -127,7 +123,7 @@ export class ApiService {
       return await response.json();
     } catch (error) {
       console.error('Failed to fetch pending projects:', error);
-      return []; // Return empty array as fallback
+      throw error;
     }
   }
 
@@ -137,7 +133,7 @@ export class ApiService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Add authentication headers here
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
         },
         body: JSON.stringify({ certificate }),
       });
@@ -159,7 +155,7 @@ export class ApiService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Add authentication headers here
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
         },
         body: JSON.stringify({ reason }),
       });
@@ -175,52 +171,45 @@ export class ApiService {
     }
   }
 
-  // Fallback mock data method
-  private async getMockProjects(filters?: any): Promise<Project[]> {
-    // Mock data as fallback when API is not available
-    let mockProjects: Project[] = [
-      {
-        id: '1',
-        name: 'RocketVault',
-        description: 'Advanced DeFi auto-yield protocol with innovative staking mechanisms and cross-chain compatibility.',
-        logo: 'https://images.pexels.com/photos/844124/pexels-photo-844124.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop',
-        contractAddress: '0x1234567890123456789012345678901234567890',
-        chain: 'Ethereum',
-        type: 'DeFi',
-        website: 'https://rocketvault.finance',
-        twitter: 'https://twitter.com/rocketvault',
-        auditUrl: '/audit/0x1234567890123456789012345678901234567890',
-        certificate: 'Gold ESR',
-        status: 'approved',
-        submittedAt: new Date(Date.now() - 86400000 * 7).toISOString(),
-        approvedAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-        approvedBy: 'admin@contractguard.com'
-      }
-    ];
+  async verifyPayment(userAddress: string, contractAddress: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/payment/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userAddress, contractAddress }),
+      });
 
-    // Apply filters
-    if (filters) {
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        mockProjects = mockProjects.filter(p => 
-          p.name.toLowerCase().includes(searchLower) ||
-          p.description.toLowerCase().includes(searchLower) ||
-          p.contractAddress.toLowerCase().includes(searchLower)
-        );
+      if (!response.ok) {
+        throw new Error('Failed to verify payment');
       }
-      if (filters.chain) {
-        mockProjects = mockProjects.filter(p => p.chain === filters.chain);
-      }
-      if (filters.type) {
-        mockProjects = mockProjects.filter(p => p.type === filters.type);
-      }
-      if (filters.certificateOnly) {
-        mockProjects = mockProjects.filter(p => p.certificate === 'Gold ESR');
-      }
+
+      const result = await response.json();
+      return result.hasPaid;
+    } catch (error) {
+      console.error('Payment verification error:', error);
+      return false;
     }
+  }
 
-    await new Promise(resolve => setTimeout(resolve, 800));
-    return mockProjects;
+  async getAuditHistory(userAddress: string): Promise<AuditResult[]> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/user/${userAddress}/history`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch audit history');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to fetch audit history:', error);
+      throw error;
+    }
   }
 }
 

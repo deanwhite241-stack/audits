@@ -18,7 +18,15 @@ export const Dashboard: React.FC = () => {
       if (web3Service.isConnected()) {
         const address = await web3Service.getAddress();
         setUserAddress(address);
-        const userAudits = await apiService.getUserAudits(address);
+        const auditHistory = await apiService.getAuditHistory(address);
+        // Convert audit history to user audit format
+        const userAudits = auditHistory.map(audit => ({
+          id: `${audit.contractAddress}-${audit.timestamp}`,
+          contractAddress: audit.contractAddress,
+          timestamp: audit.timestamp,
+          status: audit.isPaid ? 'paid' : 'free',
+          riskScore: audit.riskScore
+        }));
         setAudits(userAudits);
       }
     } catch (error) {
@@ -52,14 +60,21 @@ export const Dashboard: React.FC = () => {
   if (!web3Service.isConnected()) {
     return (
       <div className="max-w-4xl mx-auto text-center py-12">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-8">
           <Shield className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Connect Your Wallet</h2>
+          <h2 className="text-xl font-semibold text-white mb-2">Connect Your Wallet</h2>
           <p className="text-gray-600 mb-6">
             Please connect your wallet to view your audit history and manage your reports.
           </p>
           <button
-            onClick={() => web3Service.connect()}
+            onClick={async () => {
+              try {
+                await web3Service.connect();
+                await loadUserAudits();
+              } catch (error) {
+                console.error('Failed to connect wallet:', error);
+              }
+            }}
             className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
           >
             Connect Wallet
@@ -72,17 +87,17 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Audit Dashboard</h1>
-            <p className="text-gray-600 mt-1">
-              Connected: <span className="font-mono text-blue-600">{formatAddress(userAddress)}</span>
+            <h1 className="text-2xl font-bold text-white">Audit Dashboard</h1>
+            <p className="text-gray-300 mt-1">
+              Connected: <span className="font-mono text-blue-400">{formatAddress(userAddress)}</span>
             </p>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-blue-600">{audits.length}</div>
-            <div className="text-sm text-gray-500">Total Audits</div>
+            <div className="text-2xl font-bold text-blue-400">{audits.length}</div>
+            <div className="text-sm text-gray-400">Total Audits</div>
           </div>
         </div>
       </div>
@@ -125,29 +140,29 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Audits List */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Audits</h2>
+      <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+        <div className="p-6 border-b border-white/10">
+          <h2 className="text-lg font-semibold text-white">Recent Audits</h2>
         </div>
         
         {isLoading ? (
           <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading your audits...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
+            <p className="text-gray-300">Loading your audits...</p>
           </div>
         ) : audits.length === 0 ? (
           <div className="p-8 text-center">
             <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No audits yet. Start by analyzing your first contract!</p>
+            <p className="text-gray-300">No audits yet. Start by analyzing your first contract!</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-white/10">
             {audits.map((audit) => (
-              <div key={audit.id} className="p-6 hover:bg-gray-50 transition-colors">
+              <div key={audit.id} className="p-6 hover:bg-white/5 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3">
-                      <div className="font-mono text-sm font-medium text-gray-900">
+                      <div className="font-mono text-sm font-medium text-white">
                         {formatAddress(audit.contractAddress)}
                       </div>
                       <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRiskColor(audit.riskScore)}`}>
@@ -171,7 +186,7 @@ export const Dashboard: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                    <div className="flex items-center space-x-4 mt-2 text-sm text-gray-400">
                       <div className="flex items-center space-x-1">
                         <Clock className="h-4 w-4" />
                         <span>{formatDate(audit.timestamp)}</span>
@@ -180,10 +195,15 @@ export const Dashboard: React.FC = () => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <button className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50 transition-colors">
-                      <Eye className="h-4 w-4" />
+                      <button 
+                        onClick={() => window.location.href = `/?audit=${audit.contractAddress}`}
+                        className="text-blue-400 hover:text-blue-300 p-2 rounded-lg hover:bg-blue-500/10 transition-colors"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
                     </button>
                     {audit.status === 'paid' && (
-                      <button className="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-green-50 transition-colors">
+                      <button className="text-green-400 hover:text-green-300 p-2 rounded-lg hover:bg-green-500/10 transition-colors">
                         <Download className="h-4 w-4" />
                       </button>
                     )}
