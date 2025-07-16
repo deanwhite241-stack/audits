@@ -9,11 +9,12 @@ import { ProjectsLibrary } from './components/ProjectsLibrary';
 import { ProjectSubmission } from './components/ProjectSubmission';
 import { AdminDashboard } from './components/AdminDashboard';
 import { Pricing } from './components/Pricing';
+import { Docs } from './components/Docs';
 import { AuditResult } from './types';
 import { apiService } from './services/api';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'dashboard' | 'projects' | 'submit' | 'admin' | 'pricing'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'dashboard' | 'projects' | 'submit' | 'admin' | 'pricing' | 'docs'>('home');
   const [auditResult, setAuditResult] = useState<AuditResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -77,6 +78,8 @@ function App() {
             <AdminDashboard />
           ) : currentPage === 'pricing' ? (
             <Pricing />
+          ) : currentPage === 'docs' ? (
+            <Docs />
           ) : (
             <Dashboard />
           )}

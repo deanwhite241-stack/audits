@@ -108,7 +108,14 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
             >
               Pricing
             </button>
-            <button className="text-gray-300 hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+            <button
+              onClick={() => onNavigate('docs')}
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                currentPage === 'docs'
+                  ? 'text-blue-400 bg-blue-500/20'
+                  : 'text-gray-300 hover:text-blue-400'
+              }`}
+            >
               Docs
             </button>
           </nav>
@@ -176,7 +183,10 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
               >
                 Pricing
               </button>
-              <button className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-blue-400 hover:bg-white/10 w-full text-left">
+              <button
+                onClick={() => { onNavigate('docs'); setIsMenuOpen(false); }}
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-blue-400 hover:bg-white/10 w-full text-left"
+              >
                 Docs
               </button>
             </div>
