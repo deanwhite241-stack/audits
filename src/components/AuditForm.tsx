@@ -54,8 +54,8 @@ export const AuditForm: React.FC<AuditFormProps> = ({ onSubmit, isLoading }) => 
               placeholder="Enter contract address (0x...)"
               className={`flex-1 px-4 py-3 pl-12 text-lg border-2 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
                 error 
-                  ? 'border-red-300 bg-red-50' 
-                  : 'border-gray-300 bg-white hover:border-gray-400'
+                  ? 'border-red-400 bg-red-500/10 text-white placeholder-red-300' 
+                  : 'border-white/20 bg-white/10 text-white placeholder-gray-400 hover:border-white/30'
               }`}
               disabled={isLoading}
             />
@@ -82,7 +82,7 @@ export const AuditForm: React.FC<AuditFormProps> = ({ onSubmit, isLoading }) => 
         </div>
 
         {error && (
-          <div className="flex items-center space-x-2 text-red-600 text-sm">
+          <div className="flex items-center space-x-2 text-red-400 text-sm">
             <AlertCircle className="h-4 w-4" />
             <span>{error}</span>
           </div>
@@ -90,36 +90,36 @@ export const AuditForm: React.FC<AuditFormProps> = ({ onSubmit, isLoading }) => 
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
           <div className="flex items-center space-x-2">
-            <CheckCircle className="h-4 w-4 text-green-500" />
-            <span>Free basic analysis</span>
+            <CheckCircle className="h-4 w-4 text-green-400" />
+            <span className="text-gray-300">Free basic analysis</span>
           </div>
           <div className="flex items-center space-x-2">
-            <CheckCircle className="h-4 w-4 text-green-500" />
-            <span>Works with verified & unverified contracts</span>
+            <CheckCircle className="h-4 w-4 text-green-400" />
+            <span className="text-gray-300">Works with verified & unverified contracts</span>
           </div>
           <div className="flex items-center space-x-2">
-            <CheckCircle className="h-4 w-4 text-green-500" />
-            <span>AI-powered vulnerability detection</span>
+            <CheckCircle className="h-4 w-4 text-green-400" />
+            <span className="text-gray-300">AI-powered vulnerability detection</span>
           </div>
           <div className="flex items-center space-x-2">
-            <CheckCircle className="h-4 w-4 text-green-500" />
-            <span>Instant security score</span>
+            <CheckCircle className="h-4 w-4 text-green-400" />
+            <span className="text-gray-300">Instant security score</span>
           </div>
         </div>
       </form>
 
-      <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-        <h3 className="font-medium text-blue-900 mb-2">Try these example contracts:</h3>
+      <div className="mt-8 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+        <h3 className="font-medium text-blue-300 mb-2">Try these example contracts:</h3>
         <div className="space-y-2">
           <button
             onClick={() => setContractAddress('0xA0b86a33E6441d1E3c7B6C47A1B5Ad4b2e86A24e')}
-            className="block w-full text-left text-sm text-blue-600 hover:text-blue-800 font-mono bg-white px-3 py-2 rounded border hover:border-blue-300 transition-colors"
+            className="block w-full text-left text-sm text-blue-400 hover:text-blue-300 font-mono bg-white/5 px-3 py-2 rounded border border-white/10 hover:border-blue-400/30 transition-colors"
           >
             0xA0b86a33E6441d1E3c7B6C47A1B5Ad4b2e86A24e
           </button>
           <button
             onClick={() => setContractAddress('0x6B175474E89094C44Da98b954EedeAC495271d0F')}
-            className="block w-full text-left text-sm text-blue-600 hover:text-blue-800 font-mono bg-white px-3 py-2 rounded border hover:border-blue-300 transition-colors"
+            className="block w-full text-left text-sm text-blue-400 hover:text-blue-300 font-mono bg-white/5 px-3 py-2 rounded border border-white/10 hover:border-blue-400/30 transition-colors"
           >
             0x6B175474E89094C44Da98b954EedeAC495271d0F
           </button>
