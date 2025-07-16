@@ -69,6 +69,12 @@ export class Web3Service {
     if (!this.signer) throw new Error('Wallet not connected');
     return await this.signer.getAddress();
   }
+
+  disconnect() {
+    this.provider = null;
+    this.signer = null;
+    this.contract = null;
+  }
 }
 
 export const web3Service = new Web3Service();

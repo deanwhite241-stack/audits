@@ -123,11 +123,20 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
           {/* Connect Wallet Button */}
           <div className="flex items-center space-x-4">
             {isConnected ? (
-              <div className="flex items-center space-x-2 bg-green-500/20 px-3 py-2 rounded-lg border border-green-500/30">
-                <Wallet className="h-4 w-4 text-green-400" />
-                <span className="text-sm font-medium text-green-400">
-                  {formatAddress(userAddress)}
-                </span>
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 bg-green-500/20 px-3 py-2 rounded-lg border border-green-500/30">
+                  <Wallet className="h-4 w-4 text-green-400" />
+                  <span className="text-sm font-medium text-green-400">
+                    {formatAddress(userAddress)}
+                  </span>
+                </div>
+                <button
+                  onClick={disconnectWallet}
+                  className="bg-red-500/20 text-red-400 px-3 py-2 rounded-lg font-medium hover:bg-red-500/30 transition-all duration-200 flex items-center space-x-2 border border-red-500/30"
+                >
+                  <X className="h-4 w-4" />
+                  <span className="hidden sm:inline">Disconnect</span>
+                </button>
               </div>
             ) : (
               <button
@@ -153,6 +162,15 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-slate-800/95 border-t border-white/10">
+              {isConnected && (
+                <button
+                  onClick={() => { disconnectWallet(); setIsMenuOpen(false); }}
+                  className="block px-3 py-2 rounded-md text-base font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 w-full text-left flex items-center space-x-2"
+                >
+                  <X className="h-4 w-4" />
+                  <span>Disconnect Wallet</span>
+                </button>
+              )}
               <button
                 onClick={() => { onNavigate('home'); setIsMenuOpen(false); }}
                 className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-blue-400 hover:bg-white/10 w-full text-left"
