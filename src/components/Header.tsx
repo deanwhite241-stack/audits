@@ -38,6 +38,16 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
     }
   };
 
+  const disconnectWallet = async () => {
+    try {
+      await web3Service.disconnect();
+      setIsConnected(false);
+      setUserAddress('');
+    } catch (error) {
+      console.error('Failed to disconnect wallet:', error);
+    }
+  };
+
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
