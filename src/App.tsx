@@ -17,6 +17,17 @@ function App() {
   const [currentPage, setCurrentPage] = useState<'home' | 'dashboard' | 'projects' | 'submit' | 'admin' | 'pricing' | 'docs'>('home');
   const [auditResult, setAuditResult] = useState<AuditResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [walletConnected, setWalletConnected] = useState(false);
+
+  useEffect(() => {
+    // Check wallet connection on app load
+    const checkConnection = async () => {
+      if (web3Service.isConnected()) {
+        setWalletConnected(true);
+      }
+    };
+    checkConnection();
+  }, []);
 
   const handleAuditSubmit = async (contractAddress: string) => {
     setIsLoading(true);
@@ -38,7 +49,11 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900">
-      <Header onNavigate={setCurrentPage} currentPage={currentPage} />
+      <Header 
+        onNavigate={setCurrentPage} 
+        currentPage={currentPage}
+        onWalletStateChange={setWalletConnected}
+      />
       
       <main className="py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

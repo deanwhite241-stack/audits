@@ -8,10 +8,21 @@ export const Dashboard: React.FC = () => {
   const [audits, setAudits] = useState<UserAudit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userAddress, setUserAddress] = useState<string>('');
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
 
   useEffect(() => {
-    loadUserAudits();
+    checkWalletConnection();
   }, []);
+
+  const checkWalletConnection = async () => {
+    if (web3Service.isConnected()) {
+      setIsWalletConnected(true);
+      await loadUserAudits();
+    } else {
+      setIsWalletConnected(false);
+      setIsLoading(false);
+    }
+  };
 
   const loadUserAudits = async () => {
     try {
@@ -57,7 +68,7 @@ export const Dashboard: React.FC = () => {
     return 'text-green-600 bg-green-50';
   };
 
-  if (!web3Service.isConnected()) {
+  if (!isWalletConnected) {
     return (
       <div className="max-w-4xl mx-auto text-center py-12">
         <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-8">
@@ -70,7 +81,8 @@ export const Dashboard: React.FC = () => {
             onClick={async () => {
               try {
                 await web3Service.connect();
-                await loadUserAudits();
+                setIsWalletConnected(true);
+                await checkWalletConnection();
               } catch (error) {
                 console.error('Failed to connect wallet:', error);
               }
