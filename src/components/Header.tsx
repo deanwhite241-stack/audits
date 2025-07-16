@@ -98,7 +98,14 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
             >
               Submit Project
             </button>
-            <button className="text-gray-300 hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+            <button
+              onClick={() => onNavigate('pricing')}
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                currentPage === 'pricing'
+                  ? 'text-blue-400 bg-blue-500/20'
+                  : 'text-gray-300 hover:text-blue-400'
+              }`}
+            >
               Pricing
             </button>
             <button className="text-gray-300 hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -163,7 +170,10 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
               >
                 Submit Project
               </button>
-              <button className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-blue-400 hover:bg-white/10 w-full text-left">
+              <button
+                onClick={() => { onNavigate('pricing'); setIsMenuOpen(false); }}
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-blue-400 hover:bg-white/10 w-full text-left"
+              >
                 Pricing
               </button>
               <button className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-blue-400 hover:bg-white/10 w-full text-left">

@@ -8,11 +8,12 @@ import { Dashboard } from './components/Dashboard';
 import { ProjectsLibrary } from './components/ProjectsLibrary';
 import { ProjectSubmission } from './components/ProjectSubmission';
 import { AdminDashboard } from './components/AdminDashboard';
+import { Pricing } from './components/Pricing';
 import { AuditResult } from './types';
 import { apiService } from './services/api';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'dashboard' | 'projects' | 'submit' | 'admin'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'dashboard' | 'projects' | 'submit' | 'admin' | 'pricing'>('home');
   const [auditResult, setAuditResult] = useState<AuditResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -74,6 +75,8 @@ function App() {
             <ProjectSubmission />
           ) : currentPage === 'admin' ? (
             <AdminDashboard />
+          ) : currentPage === 'pricing' ? (
+            <Pricing />
           ) : (
             <Dashboard />
           )}
