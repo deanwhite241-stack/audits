@@ -1,7 +1,8 @@
 import { AuditResult, UserAudit, Project, ProjectSubmission } from '../types';
 
+// Update this URL when you deploy your backend server
 const API_BASE_URL = import.meta.env.PROD 
-  ? 'https://your-backend-api.com/api' 
+  ? 'https://your-deployed-backend-url.com/api'  // Replace with your deployed backend URL
   : 'http://localhost:3001/api';
 
 export class ApiService {

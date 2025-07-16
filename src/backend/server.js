@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const db = require('./database');
 require('dotenv').config();
 
 const app = express();
@@ -47,7 +48,10 @@ const upload = multer({
 // Middleware
 app.use(limiter);
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173', 'https://papaya-seahorse-ebcc5a.netlify.app'],
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || [
+    'http://localhost:5173', 
+    'https://papaya-seahorse-ebcc5a.netlify.app'
+  ],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -61,11 +65,6 @@ const openai = new OpenAI({
 // Etherscan configuration
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const ETHERSCAN_BASE_URL = 'https://api.etherscan.io/api';
-
-// In-memory storage (replace with database in production)
-let projects = [];
-let userAudits = {};
-let auditHistory = {};
 
 // Utility functions
 const fetchContractSource = async (address) => {
@@ -218,8 +217,26 @@ const validateContractAddress = (req, res, next) => {
 app.post('/api/audit', validateContractAddress, async (req, res) => {
   try {
     const { contractAddress } = req.body;
+    const userAddress = req.headers['x-user-address']; // Optional user address from frontend
     
     console.log(`Starting audit for contract: ${contractAddress}`);
+    
+    // Check if audit already exists
+    const existingAudit = await db.getAudit(contractAddress, userAddress);
+    if (existingAudit) {
+      console.log('Returning cached audit result');
+      return res.json({
+        contractAddress: existingAudit.contract_address,
+        timestamp: existingAudit.created_at,
+        riskScore: existingAudit.risk_score,
+        summary: existingAudit.summary,
+        issueCount: existingAudit.issue_count,
+        contractInfo: existingAudit.contract_info,
+        freeReport: existingAudit.free_report,
+        premiumReport: existingAudit.premium_report,
+        isPaid: existingAudit.is_paid
+      });
+    }
     
     // Fetch contract source code
     let sourceData;
@@ -271,11 +288,23 @@ app.post('/api/audit', validateContractAddress, async (req, res) => {
       isPaid: false
     };
 
-    // Store audit in history
-    if (!auditHistory[contractAddress]) {
-      auditHistory[contractAddress] = [];
+    // Save audit to database
+    await db.createAudit({
+      contract_address: contractAddress,
+      user_address: userAddress,
+      risk_score: aiAnalysis.riskScore,
+      summary: aiAnalysis.summary,
+      contract_info: result.contractInfo,
+      issue_count: aiAnalysis.issueCount,
+      free_report: aiAnalysis.freeReport,
+      premium_report: aiAnalysis.premiumReport,
+      is_paid: false
+    });
+
+    // Create user if provided
+    if (userAddress) {
+      await db.createUser(userAddress);
     }
-    auditHistory[contractAddress].push(result);
 
     console.log(`Analysis completed for ${contractAddress}`);
     res.json(result);
@@ -290,54 +319,57 @@ app.post('/api/audit', validateContractAddress, async (req, res) => {
 });
 
 // User audit history
-app.get('/api/user/:address/audits', (req, res) => {
-  const { address } = req.params;
-  const audits = userAudits[address] || [];
-  res.json(audits);
+app.get('/api/user/:address/audits', async (req, res) => {
+  try {
+    const { address } = req.params;
+    const audits = await db.getUserAudits(address);
+    
+    const formattedAudits = audits.map(audit => ({
+      id: `${audit.contract_address}-${audit.timestamp}`,
+      contractAddress: audit.contract_address,
+      timestamp: audit.timestamp,
+      status: audit.is_paid ? 'paid' : 'free',
+      riskScore: audit.risk_score
+    }));
+    
+    res.json(formattedAudits);
+  } catch (error) {
+    console.error('Failed to fetch user audits:', error);
+    res.status(500).json({ error: 'Failed to fetch user audits' });
+  }
 });
 
-app.get('/api/user/:address/history', (req, res) => {
-  const { address } = req.params;
-  const history = [];
-  
-  // Collect all audits for this user
-  Object.values(auditHistory).flat().forEach(audit => {
-    history.push(audit);
-  });
-  
-  res.json(history);
+app.get('/api/user/:address/history', async (req, res) => {
+  try {
+    const { address } = req.params;
+    const history = await db.getAuditHistory(address);
+    res.json(history);
+  } catch (error) {
+    console.error('Failed to fetch audit history:', error);
+    res.status(500).json({ error: 'Failed to fetch audit history' });
+  }
 });
 
 // Projects management
-app.get('/api/projects', (req, res) => {
-  const { search, chain, type, certificateOnly } = req.query;
-  let filteredProjects = projects.filter(p => p.status === 'approved');
-  
-  if (search) {
-    const searchLower = search.toLowerCase();
-    filteredProjects = filteredProjects.filter(p => 
-      p.name.toLowerCase().includes(searchLower) ||
-      p.description.toLowerCase().includes(searchLower) ||
-      p.contractAddress.toLowerCase().includes(searchLower)
-    );
+app.get('/api/projects', async (req, res) => {
+  try {
+    const { search, chain, type, certificateOnly } = req.query;
+    const filters = {
+      search,
+      chain,
+      type,
+      certificateOnly: certificateOnly === 'true'
+    };
+    
+    const projects = await db.getProjects(filters);
+    res.json(projects);
+  } catch (error) {
+    console.error('Failed to fetch projects:', error);
+    res.status(500).json({ error: 'Failed to fetch projects' });
   }
-  
-  if (chain) {
-    filteredProjects = filteredProjects.filter(p => p.chain === chain);
-  }
-  
-  if (type) {
-    filteredProjects = filteredProjects.filter(p => p.type === type);
-  }
-  
-  if (certificateOnly === 'true') {
-    filteredProjects = filteredProjects.filter(p => p.certificate === 'Gold ESR');
-  }
-  
-  res.json(filteredProjects);
 });
 
-app.post('/api/projects/submit', upload.single('logo'), (req, res) => {
+app.post('/api/projects/submit', upload.single('logo'), async (req, res) => {
   try {
     const { name, description, contractAddress, chain, type, website, twitter, telegram } = req.body;
     
@@ -345,24 +377,19 @@ app.post('/api/projects/submit', upload.single('logo'), (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     
-    const project = {
-      id: Date.now().toString(),
+    const projectData = {
       name,
       description,
-      logo: req.file ? `/uploads/${req.file.filename}` : '',
-      contractAddress,
+      logo_url: req.file ? `/uploads/${req.file.filename}` : '',
+      contract_address: contractAddress,
       chain,
       type,
       website: website || '',
       twitter: twitter || '',
-      telegram: telegram || '',
-      auditUrl: `/audit/${contractAddress}`,
-      certificate: 'None',
-      status: 'pending',
-      submittedAt: new Date().toISOString()
+      telegram: telegram || ''
     };
     
-    projects.push(project);
+    await db.createProject(projectData);
     
     res.json({ success: true, message: 'Project submitted successfully for review' });
   } catch (error) {
@@ -372,63 +399,73 @@ app.post('/api/projects/submit', upload.single('logo'), (req, res) => {
 });
 
 // Admin routes
-app.get('/api/admin/projects/pending', (req, res) => {
-  const pendingProjects = projects.filter(p => p.status === 'pending');
-  res.json(pendingProjects);
+app.get('/api/admin/projects/pending', async (req, res) => {
+  try {
+    const pendingProjects = await db.getPendingProjects();
+    res.json(pendingProjects);
+  } catch (error) {
+    console.error('Failed to fetch pending projects:', error);
+    res.status(500).json({ error: 'Failed to fetch pending projects' });
+  }
 });
 
-app.post('/api/admin/projects/:id/approve', (req, res) => {
-  const { id } = req.params;
-  const { certificate } = req.body;
-  
-  const project = projects.find(p => p.id === id);
-  if (!project) {
-    return res.status(404).json({ error: 'Project not found' });
+app.post('/api/admin/projects/:id/approve', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { certificate } = req.body;
+    const approvedBy = req.headers['x-user-address'] || 'admin';
+    
+    await db.approveProject(id, certificate, approvedBy);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to approve project:', error);
+    res.status(500).json({ error: 'Failed to approve project' });
   }
-  
-  project.status = 'approved';
-  project.certificate = certificate;
-  project.approvedAt = new Date().toISOString();
-  project.approvedBy = 'admin';
-  
-  res.json({ success: true });
 });
 
-app.post('/api/admin/projects/:id/reject', (req, res) => {
-  const { id } = req.params;
-  const { reason } = req.body;
-  
-  const project = projects.find(p => p.id === id);
-  if (!project) {
-    return res.status(404).json({ error: 'Project not found' });
+app.post('/api/admin/projects/:id/reject', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    await db.rejectProject(id, reason);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to reject project:', error);
+    res.status(500).json({ error: 'Failed to reject project' });
   }
-  
-  project.status = 'rejected';
-  project.rejectionReason = reason;
-  project.rejectedAt = new Date().toISOString();
-  
-  res.json({ success: true });
 });
 
 // Payment verification
-app.post('/api/payment/verify', (req, res) => {
-  const { userAddress, contractAddress } = req.body;
-  
-  // This would integrate with your smart contract to verify payment
-  // For now, returning false - implement with actual Web3 integration
-  res.json({ hasPaid: false });
+app.post('/api/payment/verify', async (req, res) => {
+  try {
+    const { userAddress, contractAddress } = req.body;
+    const hasPaid = await db.hasUserPaid(userAddress, contractAddress);
+    res.json({ hasPaid });
+  } catch (error) {
+    console.error('Payment verification error:', error);
+    res.status(500).json({ error: 'Payment verification failed' });
+  }
 });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
-    timestamp: new Date().toISOString(),
-    openai: !!process.env.OPENAI_API_KEY,
-    etherscan: !!process.env.ETHERSCAN_API_KEY,
-    projects: projects.length,
-    audits: Object.keys(auditHistory).length
-  });
+app.get('/api/health', async (req, res) => {
+  try {
+    const stats = await db.getStats();
+    res.json({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      openai: !!process.env.OPENAI_API_KEY,
+      etherscan: !!process.env.ETHERSCAN_API_KEY,
+      database: 'connected',
+      stats
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      status: 'unhealthy',
+      error: error.message
+    });
+  }
 });
 
 // Error handling middleware
@@ -442,11 +479,25 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  await db.close();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, shutting down gracefully');
+  await db.close();
+  process.exit(0);
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 ContractGuard API Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔑 OpenAI API: ${process.env.OPENAI_API_KEY ? '✅ Configured' : '❌ Missing'}`);
   console.log(`🔍 Etherscan API: ${process.env.ETHERSCAN_API_KEY ? '✅ Configured' : '❌ Missing'}`);
+  console.log(`🗄️  Database: ${process.env.DB_HOST ? '✅ Configured' : '❌ Using localhost'}`);
 });
 
 module.exports = app;
