@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 
-const CONTRACT_ADDRESS = '0x...'; // Deploy address will be set here
+const CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000'; // Deploy address will be set here
 const CONTRACT_ABI = [
   "function payForAuditETH(string memory contractAddress) external payable",
   "function payForAuditUSDT(string memory contractAddress) external",
