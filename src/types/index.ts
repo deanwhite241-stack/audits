@@ -46,3 +46,34 @@ export interface UserAudit {
   status: 'free' | 'paid';
   riskScore: number;
 }
+
+export interface Project {
+  id: string;
+  name: string;
+  description: string;
+  logo: string;
+  contractAddress: string;
+  chain: string;
+  type: 'Token' | 'NFT' | 'DeFi' | 'Staking' | 'Launchpad' | 'DAO' | 'Other';
+  website?: string;
+  twitter?: string;
+  telegram?: string;
+  auditUrl: string;
+  certificate: 'Gold ESR' | 'Verified' | 'None';
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: string;
+  approvedAt?: string;
+  approvedBy?: string;
+}
+
+export interface ProjectSubmission {
+  name: string;
+  description: string;
+  logo: File | null;
+  contractAddress: string;
+  chain: string;
+  type: Project['type'];
+  website?: string;
+  twitter?: string;
+  telegram?: string;
+}

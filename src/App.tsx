@@ -4,11 +4,14 @@ import { Hero } from './components/Hero';
 import { AuditForm } from './components/AuditForm';
 import { AuditResults } from './components/AuditResults';
 import { Dashboard } from './components/Dashboard';
+import { ProjectsLibrary } from './components/ProjectsLibrary';
+import { ProjectSubmission } from './components/ProjectSubmission';
+import { AdminDashboard } from './components/AdminDashboard';
 import { AuditResult } from './types';
 import { apiService } from './services/api';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'dashboard'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'dashboard' | 'projects' | 'submit' | 'admin'>('home');
   const [auditResult, setAuditResult] = useState<AuditResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -62,6 +65,12 @@ function App() {
                 </div>
               )}
             </div>
+          ) : currentPage === 'projects' ? (
+            <ProjectsLibrary />
+          ) : currentPage === 'submit' ? (
+            <ProjectSubmission />
+          ) : currentPage === 'admin' ? (
+            <AdminDashboard />
           ) : (
             <Dashboard />
           )}

@@ -69,6 +69,16 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
               Audit
             </button>
             <button
+              onClick={() => onNavigate('projects')}
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                currentPage === 'projects'
+                  ? 'text-blue-600 bg-blue-50'
+                  : 'text-gray-700 hover:text-blue-600'
+              }`}
+            >
+              Projects
+            </button>
+            <button
               onClick={() => onNavigate('dashboard')}
               className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 currentPage === 'dashboard'
@@ -77,6 +87,16 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
               }`}
             >
               Dashboard
+            </button>
+            <button
+              onClick={() => onNavigate('submit')}
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                currentPage === 'submit'
+                  ? 'text-blue-600 bg-blue-50'
+                  : 'text-gray-700 hover:text-blue-600'
+              }`}
+            >
+              Submit Project
             </button>
             <button className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
               Pricing
@@ -126,10 +146,22 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPage }) => {
                 Audit
               </button>
               <button
+                onClick={() => { onNavigate('projects'); setIsMenuOpen(false); }}
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 w-full text-left"
+              >
+                Projects
+              </button>
+              <button
                 onClick={() => { onNavigate('dashboard'); setIsMenuOpen(false); }}
                 className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 w-full text-left"
               >
                 Dashboard
+              </button>
+              <button
+                onClick={() => { onNavigate('submit'); setIsMenuOpen(false); }}
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 w-full text-left"
+              >
+                Submit Project
               </button>
               <button className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 w-full text-left">
                 Pricing
