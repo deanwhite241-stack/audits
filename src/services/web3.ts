@@ -76,7 +76,7 @@ export class Web3Service {
     return await this.signer.getAddress();
   }
 
-  disconnect() {
+  async disconnect() {
     // Clear the connection state
     this.provider = null;
     this.signer = null;
