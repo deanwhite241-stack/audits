@@ -1,9 +1,7 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
+import { injected } from 'wagmi/connectors';
 import { mainnet, sepolia } from 'wagmi/chains';
+import { createConfig, http } from 'wagmi';
 
-export const config = getDefaultConfig({
-  appName: 'ContractGuard',
-  projectId: 'YOUR_PROJECT_ID', // You can get this from https://cloud.walletconnect.com
+export const config = createConfig({
   chains: [mainnet, sepolia],
-  ssr: false, // If your dApp uses server side rendering (SSR)
-});
