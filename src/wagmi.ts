@@ -1,9 +1,9 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { injected } from 'wagmi/connectors';
 import { mainnet, sepolia } from 'wagmi/chains';
-import { createConfig, http } from 'wagmi';
 
-export const config = createConfig({
+export const config = getDefaultConfig({
+  appName: 'ContractGuard',
+  projectId: 'YOUR_PROJECT_ID',
   chains: [mainnet, sepolia],
-}
-)
+  ssr: false,
+});
