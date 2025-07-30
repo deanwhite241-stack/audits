@@ -59,23 +59,23 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             <ul className="text-sm text-gray-700 space-y-1">
               <li className="flex items-center">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                Advanced spyware detection
+                20 Advanced Security Modules (Gas, Reentrancy, Access Control, etc.)
               </li>
               <li className="flex items-center">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                Backdoor vulnerability analysis
+                8 DeFi Security Modules (Flash Loans, Oracle, AMM, Liquidity Pool)
               </li>
               <li className="flex items-center">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                Honeypot risk assessment
+                4 Economic Analysis Modules (Tokenomics, Attack Simulation)
               </li>
               <li className="flex items-center">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                Detailed security recommendations
+                3 Behavioral Analysis Modules (On-chain, Reputation, Dependencies)
               </li>
               <li className="flex items-center">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                Exportable PDF report
+                Professional PDF Report with Executive Summary & Analytics
               </li>
             </ul>
           </div>

@@ -13,7 +13,12 @@ import {
   Bug,
   Search,
   Award,
-  Clock
+  Clock,
+  DollarSign,
+  Activity,
+  CheckCircle,
+  BarChart3,
+  CreditCard
 } from 'lucide-react';
 
 export const Pricing: React.FC = () => {
@@ -45,23 +50,24 @@ export const Pricing: React.FC = () => {
       name: 'Pro Plan',
       price: '$500',
       period: 'per audit',
-      description: 'Comprehensive AI-powered security analysis',
+      description: 'Complete security analysis with 35 professional modules',
       color: 'from-purple-600 to-purple-700',
       popular: true,
       features: [
         { name: 'Everything in Free Plan', included: true, icon: Check },
-        { name: 'Advanced spyware detection', included: true, icon: Search },
-        { name: 'Backdoor vulnerability analysis', included: true, icon: Lock },
-        { name: 'Honeypot risk assessment', included: true, icon: AlertTriangle },
-        { name: 'Hidden malicious code detection', included: true, icon: Bug },
-        { name: 'Privacy risk analysis', included: true, icon: Eye },
-        { name: 'Detailed security recommendations', included: true, icon: Star },
-        { name: 'Technical analysis report', included: true, icon: FileText },
+        { name: '20 Advanced Security Modules', included: true, icon: Shield },
+        { name: '8 DeFi Security Modules', included: true, icon: Lock },
+        { name: '4 Economic Analysis Modules', included: true, icon: DollarSign },
+        { name: '3 Behavioral Analysis Modules', included: true, icon: Activity },
+        { name: 'Gas Optimization Analysis', included: true, icon: Zap },
+        { name: 'Formal Verification Checks', included: true, icon: CheckCircle },
+        { name: 'Economic Attack Simulation', included: true, icon: AlertTriangle },
+        { name: 'Developer Reputation Check', included: true, icon: Award },
         { name: 'Exportable PDF certificate', included: true, icon: Download },
         { name: 'Gold ESR certification eligible', included: true, icon: Award },
         { name: 'Priority email support', included: true, icon: Shield },
         { name: '30-day report access', included: true, icon: Clock },
-        { name: 'API access (coming soon)', included: true, icon: Zap }
+        { name: 'Professional Analytics Dashboard', included: true, icon: BarChart3 }
       ]
     }
   ];
@@ -271,12 +277,25 @@ export const Pricing: React.FC = () => {
             </div>
 
             <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-              <h3 className="text-lg font-semibold text-white mb-3">
-                How does payment work?
+              <h3 className="font-semibold text-white mb-3 flex items-center">
+                <Eye className="h-5 w-5 mr-2 text-blue-400" />
+                How many security modules are included?
               </h3>
               <p className="text-gray-300 text-sm">
-                Pay per audit using ETH or USDT through MetaMask. No subscriptions or hidden fees. 
-                You only pay when you need comprehensive analysis.
+                The Pro plan includes 35 professional security modules: 20 advanced security modules, 
+                8 DeFi-specific modules, 4 economic analysis modules, and 3 behavioral analysis modules.
+              </p>
+            </div>
+            
+            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+              <h3 className="font-semibold text-white mb-3 flex items-center">
+                <CreditCard className="h-5 w-5 mr-2 text-green-400" />
+                What makes this different from basic analysis?
+              </h3>
+              <p className="text-gray-300 text-sm">
+                Basic analysis covers fundamental vulnerabilities. Pro analysis includes advanced modules like 
+                gas optimization, formal verification, economic attack simulation, flash loan protection, 
+                oracle manipulation detection, and comprehensive behavioral analysis.
               </p>
             </div>
 
