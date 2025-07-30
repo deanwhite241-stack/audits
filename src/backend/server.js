@@ -111,6 +111,9 @@ const fetchContractBytecode = async (address) => {
 };
 
 const analyzeWithAI = async (code, contractAddress, isSourceCode = true) => {
+  // Import enhanced audit service
+  const { enhancedAuditService } = require('../services/enhancedAuditService');
+  
   const prompt = `
     You are an expert smart contract security auditor. Analyze this ${isSourceCode ? 'Solidity source code' : 'bytecode'} for security vulnerabilities, backdoors, honeypots, and malicious logic.
     
@@ -237,7 +240,30 @@ app.post('/api/audit', validateContractAddress, async (req, res) => {
         isPaid: existingAudit.is_paid
       });
     }
-    
+        const aiAnalysis = JSON.parse(analysisText);
+        
+        // Run enhanced analysis with 20 additional modules for premium users
+        try {
+          const enhancedAnalysis = await enhancedAuditService.runComprehensiveAnalysis(
+            code, 
+            contractAddress, 
+            isSourceCode ? undefined : code
+          );
+          
+          // Merge AI analysis with enhanced module results
+          return {
+            ...aiAnalysis,
+            enhancedModules: enhancedAnalysis.premiumReport.moduleResults,
+            severityBreakdown: enhancedAnalysis.premiumReport.severityBreakdown,
+            gasOptimization: enhancedAnalysis.premiumReport.gasOptimization,
+            securityScore: enhancedAnalysis.premiumReport.securityScore,
+            riskAssessment: enhancedAnalysis.premiumReport.riskAssessment
+          };
+        } catch (enhancedError) {
+          console.error('Enhanced analysis failed:', enhancedError);
+          // Return basic AI analysis if enhanced fails
+          return aiAnalysis;
+        }
     // Fetch contract source code
     let sourceData;
     try {
