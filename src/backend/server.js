@@ -7,6 +7,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const db = require('./database');
+const { enhancedAuditService } = require('../services/enhancedAuditService');
 require('dotenv').config();
 
 const app = express();
@@ -111,9 +112,6 @@ const fetchContractBytecode = async (address) => {
 };
 
 const analyzeWithAI = async (code, contractAddress, isSourceCode = true) => {
-  // Import enhanced audit service
-  const { enhancedAuditService } = require('../services/enhancedAuditService');
-  
   const prompt = `
     You are an expert smart contract security auditor. Analyze this ${isSourceCode ? 'Solidity source code' : 'bytecode'} for security vulnerabilities, backdoors, honeypots, and malicious logic.
     
@@ -241,29 +239,6 @@ app.post('/api/audit', validateContractAddress, async (req, res) => {
       });
     }
         const aiAnalysis = JSON.parse(analysisText);
-        
-        // Run enhanced analysis with 20 additional modules for premium users
-        try {
-          const enhancedAnalysis = await enhancedAuditService.runComprehensiveAnalysis(
-            code, 
-            contractAddress, 
-            isSourceCode ? undefined : code
-          );
-          
-          // Merge AI analysis with enhanced module results
-          return {
-            ...aiAnalysis,
-            enhancedModules: enhancedAnalysis.premiumReport.moduleResults,
-            severityBreakdown: enhancedAnalysis.premiumReport.severityBreakdown,
-            gasOptimization: enhancedAnalysis.premiumReport.gasOptimization,
-            securityScore: enhancedAnalysis.premiumReport.securityScore,
-            riskAssessment: enhancedAnalysis.premiumReport.riskAssessment
-          };
-        } catch (enhancedError) {
-          console.error('Enhanced analysis failed:', enhancedError);
-          // Return basic AI analysis if enhanced fails
-          return aiAnalysis;
-        }
     // Fetch contract source code
     let sourceData;
     try {
@@ -297,20 +272,56 @@ app.post('/api/audit', validateContractAddress, async (req, res) => {
     console.log('Starting AI analysis...');
     const aiAnalysis = await analyzeWithAI(analysisInput, contractAddress, isVerified);
     
+    // Run enhanced analysis with 35 professional modules for premium users
+    let finalAuditResult = aiAnalysis;
+    try {
+      console.log('Starting enhanced analysis with 35 professional modules...');
+      const enhancedAnalysis = await enhancedAuditService.runComprehensiveAnalysis(
+        analysisInput, 
+        contractAddress, 
+        isVerified ? undefined : analysisInput
+      );
+      
+      // Merge AI analysis with enhanced module results
+      finalAuditResult = {
+        ...aiAnalysis,
+        enhancedModules: enhancedAnalysis.premiumReport.moduleResults,
+        severityBreakdown: enhancedAnalysis.premiumReport.severityBreakdown,
+        gasOptimization: enhancedAnalysis.premiumReport.gasOptimization,
+        securityScore: enhancedAnalysis.premiumReport.securityScore,
+        riskAssessment: enhancedAnalysis.premiumReport.riskAssessment,
+        premiumReport: {
+          ...aiAnalysis.premiumReport,
+          ...enhancedAnalysis.premiumReport
+        }
+      };
+      
+      console.log('Enhanced analysis completed successfully');
+    } catch (enhancedError) {
+      console.error('Enhanced analysis failed:', enhancedError);
+      // Fallback to basic AI analysis if enhanced fails
+      console.log('Falling back to basic AI analysis');
+    }
+    
     // Structure the result
     const result = {
       contractAddress,
       timestamp: new Date().toISOString(),
-      riskScore: aiAnalysis.riskScore,
-      summary: aiAnalysis.summary,
-      issueCount: aiAnalysis.issueCount,
+      riskScore: finalAuditResult.riskScore,
+      summary: finalAuditResult.summary,
+      issueCount: finalAuditResult.issueCount,
       contractInfo: {
-        ...aiAnalysis.contractInfo,
+        ...finalAuditResult.contractInfo,
         isVerified,
-        compiler: sourceData.CompilerVersion || aiAnalysis.contractInfo.compiler
+        compiler: sourceData.CompilerVersion || finalAuditResult.contractInfo.compiler
       },
-      freeReport: aiAnalysis.freeReport,
-      premiumReport: aiAnalysis.premiumReport,
+      freeReport: finalAuditResult.freeReport,
+      premiumReport: finalAuditResult.premiumReport,
+      enhancedModules: finalAuditResult.enhancedModules,
+      severityBreakdown: finalAuditResult.severityBreakdown,
+      gasOptimization: finalAuditResult.gasOptimization,
+      securityScore: finalAuditResult.securityScore,
+      riskAssessment: finalAuditResult.riskAssessment,
       isPaid: false
     };
 
@@ -318,12 +329,12 @@ app.post('/api/audit', validateContractAddress, async (req, res) => {
     await db.createAudit({
       contract_address: contractAddress,
       user_address: userAddress,
-      risk_score: aiAnalysis.riskScore,
-      summary: aiAnalysis.summary,
+      risk_score: finalAuditResult.riskScore,
+      summary: finalAuditResult.summary,
       contract_info: result.contractInfo,
-      issue_count: aiAnalysis.issueCount,
-      free_report: aiAnalysis.freeReport,
-      premium_report: aiAnalysis.premiumReport,
+      issue_count: finalAuditResult.issueCount,
+      free_report: finalAuditResult.freeReport,
+      premium_report: finalAuditResult.premiumReport,
       is_paid: false
     });
 
