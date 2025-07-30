@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { X, Wallet, CreditCard, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import { useAccount } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { web3Service } from '../services/web3';
 
 interface PaymentModalProps {
@@ -16,14 +18,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<'ETH' | 'USDT'>('ETH');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
+  const { isConnected } = useAccount();
 
   const handlePayment = async () => {
     try {
       setIsProcessing(true);
       setError('');
 
-      if (!web3Service.isConnected()) {
-        await web3Service.connect();
+      if (!isConnected) {
+        setError('Please connect your wallet first');
+        return;
       }
 
       if (paymentMethod === 'ETH') {
@@ -125,9 +129,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </div>
           )}
 
+          {!isConnected && (
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-3">Please connect your wallet to proceed with payment:</p>
+              <ConnectButton />
+            </div>
+          )}
+
           <button
             onClick={handlePayment}
-            disabled={isProcessing}
+            disabled={isProcessing || !isConnected}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isProcessing ? (

@@ -1,23 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Shield, TrendingUp, Download, Eye, Lock, AlertTriangle } from 'lucide-react';
+import { useAccount } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { UserAudit } from '../types';
 import { apiService } from '../services/api';
-import { web3Service } from '../services/web3';
 
 export const Dashboard: React.FC = () => {
   const [audits, setAudits] = useState<UserAudit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [userAddress, setUserAddress] = useState<string>('');
+  const { address, isConnected } = useAccount();
 
   useEffect(() => {
-    loadUserAudits();
-  }, []);
+    if (isConnected && address) {
+      loadUserAudits();
+    }
+  }, [isConnected, address]);
 
   const loadUserAudits = async () => {
     try {
-      if (web3Service.isConnected()) {
-        const address = await web3Service.getAddress();
-        setUserAddress(address);
+      if (address) {
         const auditHistory = await apiService.getAuditHistory(address);
         // Convert audit history to user audit format
         const userAudits = auditHistory.map(audit => ({
@@ -57,7 +58,7 @@ export const Dashboard: React.FC = () => {
     return 'text-green-600 bg-green-50';
   };
 
-  if (!web3Service.isConnected()) {
+  if (!isConnected) {
     return (
       <div className="max-w-4xl mx-auto text-center py-12">
         <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-8">
@@ -66,19 +67,7 @@ export const Dashboard: React.FC = () => {
           <p className="text-gray-600 mb-6">
             Please connect your wallet to view your audit history and manage your reports.
           </p>
-          <button
-            onClick={async () => {
-              try {
-                await web3Service.connect();
-                await loadUserAudits();
-              } catch (error) {
-                console.error('Failed to connect wallet:', error);
-              }
-            }}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
-          >
-            Connect Wallet
-          </button>
+          <ConnectButton />
         </div>
       </div>
     );
@@ -92,7 +81,7 @@ export const Dashboard: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-white">Audit Dashboard</h1>
             <p className="text-gray-300 mt-1">
-              Connected: <span className="font-mono text-blue-400">{formatAddress(userAddress)}</span>
+              Connected: <span className="font-mono text-blue-400">{formatAddress(address || '')}</span>
             </p>
           </div>
           <div className="text-right">
